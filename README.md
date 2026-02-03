@@ -36,8 +36,8 @@ It is recommended to use a virtual environment or install dependencies directly 
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/portable-qemu-launcher.git
-   cd portable-qemu-launcher
+   git clone https://github.com/omegadevelopmentsfr/Qemu-launcher.git
+   cd Qemu-launcher
    ```
 
 2. Install Python dependencies (Windows & Linux):
