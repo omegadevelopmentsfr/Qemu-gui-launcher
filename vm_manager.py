@@ -1,0 +1,178 @@
+import json
+import os
+import subprocess
+import platform
+import shutil
+
+CONFIG_FILE = "config.json"
+
+class VMManager:
+    def __init__(self):
+        self.vms = []
+        self.load_config()
+        self.qemu_path = self.get_initial_qemu_path()
+        self.running_processes = {} # Dictionary to map VM index (or ID) to Popen object
+
+    def get_initial_qemu_path(self):
+        """
+        Detects QEMU path.
+        Priority:
+        1. config.json 'qemu_path' setting (if exists, but we load it later)
+        2. Local 'qemu' folder (portable mode)
+        3. System PATH
+        """
+        # Check if we have a stored path in config (loaded in __init__)
+        # However, for initial detection, let's look around.
+        
+        system = platform.system()
+        
+        # Portable check (Windows mostly, but Linux too if folder exists)
+        local_qemu = os.path.join(os.getcwd(), "qemu")
+        if os.path.exists(local_qemu):
+            if system == "Windows":
+                 exe = os.path.join(local_qemu, "qemu-system-x86_64.exe")
+                 if os.path.exists(exe): return exe
+            else:
+                 exe = os.path.join(local_qemu, "qemu-system-x86_64")
+                 if os.path.exists(exe): return exe
+
+        # System check
+        if system == "Windows":
+             path = shutil.which("qemu-system-x86_64.exe")
+        else:
+             path = shutil.which("qemu-system-x86_64")
+             
+        return path if path else ""
+
+    def load_config(self):
+        if os.path.exists(CONFIG_FILE):
+            try:
+                with open(CONFIG_FILE, 'r') as f:
+                    data = json.load(f)
+                    self.vms = data.get("vms", [])
+                    # We could also load a stored qemu_path here if we saved it
+                    stored_path = data.get("qemu_path", "")
+                    if stored_path:
+                        self.qemu_path = stored_path
+            except Exception as e:
+                print(f"Error loading config: {e}")
+                self.vms = []
+        else:
+            self.vms = []
+
+    def save_config(self):
+        data = {
+            "vms": self.vms,
+            "qemu_path": self.qemu_path
+        }
+        try:
+            with open(CONFIG_FILE, 'w') as f:
+                json.dump(data, f, indent=4)
+        except Exception as e:
+            print(f"Error saving config: {e}")
+
+    def add_vm(self, vm_data):
+        self.vms.append(vm_data)
+        self.save_config()
+
+    def update_vm(self, index, vm_data):
+        if 0 <= index < len(self.vms):
+            self.vms[index] = vm_data
+            self.save_config()
+
+    def delete_vm(self, index):
+        if 0 <= index < len(self.vms):
+            del self.vms[index]
+            self.save_config()
+
+    def get_launch_command(self, vm_data):
+        if not self.qemu_path:
+            return None, "QEMU path not configured or found."
+
+        cmd = [self.qemu_path]
+        
+        # Basic constraints
+        if vm_data.get("ram"):
+            cmd.extend(["-m", vm_data["ram"]])
+        
+        if vm_data.get("cpu"):
+            cmd.extend(["-smp", vm_data["cpu"]])
+            
+        # Disk image (HDA)
+        if vm_data.get("disk_path"):
+            cmd.extend(["-hda", vm_data["disk_path"]])
+            
+        # ISO image (CDROM)
+        if vm_data.get("iso_path"):
+            cmd.extend(["-cdrom", vm_data["iso_path"]])
+            
+        # Boot order
+        if vm_data.get("boot_order"):
+             cmd.extend(["-boot", vm_data["boot_order"]]) # e.g., 'd' for cdrom
+        
+        # Acceleration (KVM on Linux, HAX/WHPrat on Windows if available, but let's stick to basic or user defined)
+        if vm_data.get("accel"):
+            cmd.extend(["-accel", vm_data["accel"]])
+        elif platform.system() == "Linux":
+            cmd.extend(["-enable-kvm"]) # Default to KVM on Linux if possible
+
+        # Display (Standard VGA is usually safe)
+        cmd.extend(["-vga", "std"])
+        if platform.system() == "Linux":
+            # Force GTK on Linux to avoid VNC default fallback if GUI packet is missing (better to error out than hang)
+            cmd.extend(["-display", "gtk"])
+        else:
+            # On Windows, default usually picks the available GUI (SDL/GTK) correctly
+            cmd.extend(["-display", "default"])
+        
+        return cmd, None
+
+    def launch_vm_from_data(self, vm_data):
+        cmd, error = self.get_launch_command(vm_data)
+        
+        if error:
+            return error, None
+
+        try:
+            # Popen allows running in background
+            process = subprocess.Popen(cmd)
+            return None, process # Success, return process handle
+        except Exception as e:
+            return f"Failed to launch QEMU: {e}", None
+
+    def launch_vm(self, index):
+        if not (0 <= index < len(self.vms)):
+            return "Invalid VM index"
+
+        if index in self.running_processes:
+            if self.running_processes[index].poll() is None:
+                return "VM is already running"
+            else:
+                del self.running_processes[index] # Cleanup finished process
+
+        vm_data = self.vms[index]
+        error, process = self.launch_vm_from_data(vm_data)
+        
+        if not error and process:
+            self.running_processes[index] = process
+            return None
+        return error
+
+    def stop_vm(self, index):
+        if index in self.running_processes:
+            proc = self.running_processes[index]
+            if proc.poll() is None:
+                proc.terminate() # Try graceful termination
+                # You might want to wait or force kill if it doesn't stop, but terminate is usually enough for QEMU window close
+                return True
+            else:
+                del self.running_processes[index]
+        return False
+
+    def is_vm_running(self, index):
+        if index in self.running_processes:
+            if self.running_processes[index].poll() is None:
+                return True
+            else:
+                del self.running_processes[index] # Cleanup dead
+        return False
