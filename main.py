@@ -62,7 +62,11 @@ class VMEditor(ctk.CTkToplevel):
         ctk.CTkButton(self, text="Save", command=self.save).pack(pady=20)
 
     def browse_disk(self):
-        filename = filedialog.askopenfilename(title="Select Disk Image")
+        filename = filedialog.asksaveasfilename(
+            title="Select/Create Disk Image",
+            defaultextension=".qcow2",
+            filetypes=[("QCOW2 Image", "*.qcow2"), ("All files", "*.*")]
+        )
         if filename:
             self.disk_entry.delete(0, 'end')
             self.disk_entry.insert(0, filename)
