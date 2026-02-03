@@ -17,8 +17,9 @@ A lightweight, portable Python-based GUI launcher for QEMU virtual machines. Des
 ### Prerequisites
 
 #### Windows
-1. **Python 3**: Download and install [Python 3.10 or newer](https://www.python.org/downloads/windows/).
-   - **Important**: During installation, check the box **"Add Python to PATH"**.
+1. **Python 3**:
+   - **Option A (Easy)**: Search for "Python 3.12" (or newer) in the **Microsoft Store** and click Install.
+   - **Option B (Classic)**: Download from [python.org](https://www.python.org/downloads/windows/). **Important**: Check the box **"Add Python to PATH"**.
 2. **Dependencies**: You must install the required libraries (see below).
 
 #### Linux
