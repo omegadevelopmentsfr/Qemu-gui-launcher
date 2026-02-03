@@ -127,11 +127,20 @@ class QemuLauncherApp(ctk.CTk):
         
         # Settings area in sidebar
         ctk.CTkLabel(self.sidebar, text="Settings", font=ctk.CTkFont(size=16, weight="bold")).pack(pady=(40, 10))
+        
+        # QEMU System Path
         ctk.CTkLabel(self.sidebar, text="QEMU Path:").pack(padx=20, anchor="w")
         self.qemu_path_entry = ctk.CTkEntry(self.sidebar)
         self.qemu_path_entry.pack(padx=10, pady=5, fill="x")
         self.qemu_path_entry.insert(0, self.vm_manager.qemu_path or "")
-        ctk.CTkButton(self.sidebar, text="Save Path", command=self.save_qemu_path).pack(pady=10)
+        
+        # QEMU Img Path
+        ctk.CTkLabel(self.sidebar, text="QEMU Img Path:").pack(padx=20, anchor="w")
+        self.qemu_img_path_entry = ctk.CTkEntry(self.sidebar)
+        self.qemu_img_path_entry.pack(padx=10, pady=5, fill="x")
+        self.qemu_img_path_entry.insert(0, self.vm_manager.qemu_img_path or "")
+        
+        ctk.CTkButton(self.sidebar, text="Save Paths", command=self.save_qemu_path).pack(pady=10)
 
 
         # Main Area
@@ -236,8 +245,10 @@ class QemuLauncherApp(ctk.CTk):
             
     def save_qemu_path(self):
         new_path = self.qemu_path_entry.get()
+        new_img_path = self.qemu_img_path_entry.get()
         self.vm_manager.qemu_path = new_path
-        self.vm_manager.save_config() # This saves path too
+        self.vm_manager.qemu_img_path = new_img_path
+        self.vm_manager.save_config() # This saves paths too
         
 if __name__ == "__main__":
     app = QemuLauncherApp()

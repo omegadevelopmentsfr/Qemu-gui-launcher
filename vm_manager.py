@@ -9,22 +9,26 @@ CONFIG_FILE = "config.json"
 class VMManager:
     def __init__(self):
         self.vms = []
+        self.qemu_path = None
+        self.qemu_img_path = None
         self.load_config()
-        self.qemu_path = self.get_initial_qemu_path()
-        self.qemu_img_path = self.get_qemu_img_path()
+        
+        if not self.qemu_path:
+            self.qemu_path = self.get_initial_qemu_path()
+            
+        if not self.qemu_img_path:
+            self.qemu_img_path = self.get_qemu_img_path()
+            
         self.running_processes = {} # Dictionary to map VM index (or ID) to Popen object
 
     def get_initial_qemu_path(self):
         """
         Detects QEMU path.
         Priority:
-        1. config.json 'qemu_path' setting (if exists, but we load it later)
+        1. config.json 'qemu_path' setting (already loaded if sensitive, otherwise detect)
         2. Local 'qemu' folder (portable mode)
         3. System PATH
         """
-        # Check if we have a stored path in config (loaded in __init__)
-        # However, for initial detection, let's look around.
-        
         system = platform.system()
         
         # Portable check (Windows mostly, but Linux too if folder exists)
@@ -70,10 +74,8 @@ class VMManager:
                 with open(CONFIG_FILE, 'r') as f:
                     data = json.load(f)
                     self.vms = data.get("vms", [])
-                    # We could also load a stored qemu_path here if we saved it
-                    stored_path = data.get("qemu_path", "")
-                    if stored_path:
-                        self.qemu_path = stored_path
+                    self.qemu_path = data.get("qemu_path", "")
+                    self.qemu_img_path = data.get("qemu_img_path", "")
             except Exception as e:
                 print(f"Error loading config: {e}")
                 self.vms = []
@@ -83,7 +85,8 @@ class VMManager:
     def save_config(self):
         data = {
             "vms": self.vms,
-            "qemu_path": self.qemu_path
+            "qemu_path": self.qemu_path,
+            "qemu_img_path": self.qemu_img_path
         }
         try:
             with open(CONFIG_FILE, 'w') as f:
