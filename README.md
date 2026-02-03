@@ -21,7 +21,7 @@ A lightweight, portable Python-based GUI launcher for QEMU virtual machines. Des
    - **Option A (Easy)**: Search for "Python 3.12" (or newer) in the **Microsoft Store** and click Install.
    - **Option B (Classic)**: Download from [python.org](https://www.python.org/downloads/windows/). **Important**: Check the box **"Add Python to PATH"**.
 2. **Git**:
-   - To install Git (no admin rights needed), run this in Command Prompt:
+   - To install Git (no admin rights needed), run this in Command Prompt (cmd):
      ```cmd
      winget install git.git
      ```
