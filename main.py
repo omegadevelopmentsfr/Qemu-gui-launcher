@@ -189,8 +189,13 @@ class QemuLauncherApp(ctk.CTk):
         dialog = VMEditor(self)
         self.wait_window(dialog)
         if dialog.result:
-            self.vm_manager.add_vm(dialog.result)
-            self.refresh_vm_list()
+            success, error = self.vm_manager.add_vm(dialog.result)
+            if success:
+                self.refresh_vm_list()
+            else:
+                 error_window = ctk.CTkToplevel(self)
+                 error_window.title("Error Creating VM")
+                 ctk.CTkLabel(error_window, text=error or "Unknown error", text_color="red").pack(padx=20, pady=20)
 
     def edit_vm(self):
         if self.selected_vm_index == -1: return

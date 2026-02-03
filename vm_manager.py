@@ -31,7 +31,7 @@ class VMManager:
         local_qemu = os.path.join(os.getcwd(), "qemu")
         if os.path.exists(local_qemu):
             if system == "Windows":
-                 exe = os.path.join(local_qemu, "qemu-system-x86_64.exe")
+                 exe = os.path.join(local_qemu, "qemu-system-x86_64w.exe")
                  if os.path.exists(exe): return exe
             else:
                  exe = os.path.join(local_qemu, "qemu-system-x86_64")
@@ -39,7 +39,7 @@ class VMManager:
 
         # System check
         if system == "Windows":
-             path = shutil.which("qemu-system-x86_64.exe")
+             path = shutil.which("qemu-system-x86_64w.exe")
         else:
              path = shutil.which("qemu-system-x86_64")
              
@@ -129,10 +129,12 @@ class VMManager:
     def add_vm(self, vm_data):
         # Create disk if path and size defined
         if vm_data.get("disk_path") and vm_data.get("disk_size"):
-             self.create_disk(vm_data["disk_path"], vm_data["disk_size"])
+             if not self.create_disk(vm_data["disk_path"], vm_data["disk_size"]):
+                 return False, "Failed to create disk image. Check console/logs and qemu-img path."
         
         self.vms.append(vm_data)
         self.save_config()
+        return True, None
 
     def update_vm(self, index, vm_data):
         if 0 <= index < len(self.vms):
