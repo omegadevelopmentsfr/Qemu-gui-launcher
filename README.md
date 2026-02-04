@@ -55,9 +55,15 @@ It is recommended to use a virtual environment or install dependencies directly 
 ## Usage
 
 Run the application:
+### Windows
 ```bash
 python main.py
 ```
+### Linux
+```bash
+python3 main.py
+```
+
 
 ### Windows Portable Mode (No Admin Rights)
 To carry this app on a USB stick or use it without administrator privileges:
